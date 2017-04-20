@@ -9,6 +9,12 @@ julia:
 notifications:
   email: false
 # uncomment the following lines to override the default test script
+env:
+    global:
+    - PYTHON=conda
+    matrix:
+    - MPMATH=true
+    - MPMATH=false
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone(pwd()); Pkg.build("TimeSchemes"); Pkg.test("TimeSchemes"; coverage=true)'
