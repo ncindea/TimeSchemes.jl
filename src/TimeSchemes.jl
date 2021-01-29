@@ -1,6 +1,105 @@
 module TimeSchemes
 
 """
+  function Crank-nicolson(M, K, F, v0, t; outputNodes = [])
+
+Solve a linear first order in time system of ODES using the crank-nicolson discretization scheme.
+
+The form of the system is as follows:
+    M v'(t) + K v(t) = F(t)
+    v(0) = v_0
+"""
+function crank_nicolson(M, K, F, v0, t; outputNodes = [])
+    N = length(v0) # number of equations in the system
+    T = length(t)  # number of discretization times
+    
+    # ASSUMPTION : t is a equidistributed vector
+    dt = t[2] - t[1]
+    V = []
+    if length(outputNodes) != 0
+        V = zeros(length(outputNodes), T)
+    else
+        V = zeros(N, T) # solution to return
+        outputNodes = 1:N
+    end
+    cV = v0
+    V[outputNodes, 1] = cV[outputNodes]
+    MI = M + dt/2 * K
+    MO = M - dt/2 * K
+    for n = 2:T
+        cV = MI \ convert(Array{Float64, 1}, dt*(F[:, n-1]+F[:,n])/2 + MO* cV)
+        V[outputNodes, n] = cV[outputNodes]
+    end
+    V, cV
+end
+
+
+
+"""
+  function implicit_euler(M, K, F, v0, t; outputNodes = [])
+
+Solve a linear first order in time system of ODES using an implicit Euler discretization scheme.
+
+The form of the system is as follows:
+    M v'(t) + K v(t) = F(t)
+    v(0) = v_0
+"""
+function implicit_euler(M, K, F, v0, t; outputNodes = [])
+    N = length(v0) # number of equations in the system
+    T = length(t)  # number of discretization times
+    
+    # ASSUMPTION : t is a equidistributed vector
+    dt = t[2] - t[1]
+    V = []
+    if length(outputNodes) != 0
+        V = zeros(length(outputNodes), T)
+    else
+        V = zeros(N, T) # solution to return
+        outputNodes = 1:N
+    end
+    cV = v0
+    V[outputNodes, 1] = cV[outputNodes]
+    MI = M + dt * K
+    for n = 2:T
+        cV = MI \ convert(Array{Float64, 1}, dt*F[:, n] + M * cV)
+        V[outputNodes, n] = cV[outputNodes]
+    end
+    V, cV
+end
+
+"""
+  function explicit_euler(M, K, F, v0, t; outputNodes = [])
+
+Solve a linear first order in time system of ODES using an implicit Euler discretization scheme.
+
+The form of the system is as follows:
+    M v'(t) + K v(t) = F(t)
+    v(0) = v_0
+"""
+function explicit_euler(M, K, F, v0, t; outputNodes = [])
+    N = length(v0) # number of equations in the system
+    T = length(t)  # number of discretization times
+    
+    # ASSUMPTION : t is a equidistributed vector
+    dt = t[2] - t[1]
+    V = []
+    if length(outputNodes) != 0
+        V = zeros(length(outputNodes), T)
+    else
+        V = zeros(N, T) # solution to return
+        outputNodes = 1:N
+    end
+    cV = v0
+    V[outputNodes, 1] = cV[outputNodes]
+    MI = M - dt * K
+    for n = 2:T
+        cV = M \ convert(Array{Float64, 1}, dt*F[:, n-1] + MI * cV)
+        V[outputNodes, n] = cV[outputNodes]
+    end
+    V, cV
+end
+
+"""
   function newmark(M, B, K, F, v0, v1, t; β = 0.25, γ = 0.5, outputNodes = [])
 
 Solve a second order in time system of ODES using a Newmark discretization scheme.
