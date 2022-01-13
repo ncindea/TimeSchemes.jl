@@ -1,4 +1,6 @@
 module TimeSchemes
+using LinearAlgebra
+using SparseArrays
 
 """
   function Crank-nicolson(M, K, F, v0, t; outputNodes = [])
@@ -135,12 +137,13 @@ function newmark(M, B, K, F, v0, v1, t; β = 0.25, γ = 0.5, outputNodes = [])
   V[:, 1] = cV[outputNodes]
 
   MI = M + γ * dt * B + β * dt^2 * K
+  FF = lu(MI)  
 
   # for details about this scheme see [Hughes, p. 490]
   for n = 2:T
     d = cV[p] + dt * cV[q] + dt^2 / 2 * (1 - 2 * β) * a
     v = cV[q] + (1 - γ) * dt * a
-    a = MI \ convert(Array{Float64, 1}, F[:, n] - B * v - K * d)
+    a = FF \ convert(Array{Float64, 1}, F[:, n] - B * v - K * d)
     cV[p] = d + β * dt^2 * a
     cV[q] = v + γ * dt * a
     V[:, n] = cV[outputNodes]
