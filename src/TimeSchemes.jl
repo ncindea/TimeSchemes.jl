@@ -109,7 +109,7 @@ Solve a second order in time system of ODES using a Newmark discretization schem
 The form of the system is as follows:
     v(0) = v_0,   v'(0) = v_1
 """
-function newmark(M, B, K, F, v0, v1, t; β = 0.25, γ = 0.5, outputNodes = [])
+function newmark(M, B, K, F, v0, v1, t; β = 0.25, γ = 0.5, outputNodes = [], B0 = B)
   # β and γ are the parameters of the scheme
 
 
@@ -133,7 +133,7 @@ function newmark(M, B, K, F, v0, v1, t; β = 0.25, γ = 0.5, outputNodes = [])
   # initialization with initial contion
   cV[p] = v0                       # initial position
   cV[q] = v1                       # initial velocity
-  a = M \ (F[:,1] - B * v1 - K * v0) # initial acceleration
+  a = M \ (F[:,1] - B0 * v1 - K * v0) # initial acceleration
   V[:, 1] = cV[outputNodes]
 
   MI = M + γ * dt * B + β * dt^2 * K
