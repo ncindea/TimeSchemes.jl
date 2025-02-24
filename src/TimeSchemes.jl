@@ -107,6 +107,7 @@ end
 Solve a second order in time system of ODES using a Newmark discretization scheme.
 
 The form of the system is as follows:
+    M v''(t) + K v(t) = F(t)
     v(0) = v_0,   v'(0) = v_1
 """
 function newmark(M, B, K, F, v0, v1, t; β = 0.25, γ = 0.5, outputNodes = [], B0 = B)
@@ -149,6 +150,56 @@ function newmark(M, B, K, F, v0, v1, t; β = 0.25, γ = 0.5, outputNodes = [], B
     V[:, n] = cV[outputNodes]
   end
   V, cV
+end
+
+
+"""
+  function explicit2(K, F, v0, v1, t; outputNodes = [])
+
+Solve a second order in time system of ODES using an explicit discretization scheme.
+
+The form of the system is as follows:
+    v''(t) + K v(t) = F(t)
+    v(0) = v_0,   v'(0) = v_1
+"""
+function explicit2(K, F, v0, v1, t; outputNodes = [])
+
+
+    N = length(v0) # number of equations in the system
+    T = length(t)  # number of discretization times
+
+    # ASSUMPTION : t is a equidistributed vector
+    dt = t[2] - t[1]
+    V = []
+    if length(outputNodes) != 0
+        V = zeros(length(outputNodes), T)
+    else
+        V = zeros(2 * N, T) # solution to return
+        outputNodes = 1:(2*N)
+    end
+
+    p = 1:N               # first N components of the solution v
+    q = (N + 1):(2 * N)   # last  N components of the solution v'
+
+    cV = zeros(2 * N, 1)
+    # initialization with initial contion
+    cV[p] = v0                       # initial position
+    cV[q] = v1                       # initial velocity
+    a = F[:,1] - K * v0 # initial acceleration
+    V[:, 1] = cV[outputNodes]
+    V[p, 2] = v0 + dt * v1 + dt^2 / 2 * a
+    a = F[:, 2] - K*V[p, 2]
+    V[q, 2] = (V[p, 2] - V[p, 1]) / dt + dt / 2 * a
+
+
+    for n = 2:T-1
+        V[p, n+1] = 2*V[p, n] - V[p, n - 1] + dt^2 * a
+        a = F[:, n+1] - K*V[p, n+1]
+        V[q, n+1] = (V[p, n+1] - V[p, n]) / dt + dt / 2 * a
+        
+        cV = V[:, n+1]
+    end
+    V, cV
 end
 
 
