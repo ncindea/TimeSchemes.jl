@@ -202,5 +202,66 @@ function explicit2(K, F, v0, v1, t; outputNodes = [])
     V, cV
 end
 
+"""
+  function wave1dexact(K, F, v0, v1, t; outputNodes = [])
 
+Solve the 1d wave equation in an explicit way with dt = h.
+"""
+function  wave1dexact(w0, w1, T, g)
+
+    N = length(w0) 
+
+    h = 1 / (N + 1)
+    dt = h
+    NT = Int(T / dt)
+
+    
+    W = zeros(2 * N, NT + 1) #solution to return
+    cW = zeros(2 * N, 1) 
+
+    p = 1:N               # first N components of the solution w
+    q = (N + 1):(2 * N)   # last  N components of the solution w'
+
+    # initialization with initial cond
+
+    W[p, 1] = w0
+    W[q, 1] = w1
+
+    u = -w0
+    u[1] = u[1] + w0[2] / 2
+    for i = 2:N-1
+        u[i] = u[i] + (w0[i-1] + w0[i+1])/2
+    end
+    u[N] = u[N] +(w0[N-1] + g[1])/2
+    
+    
+
+    W[p, 2] = W[p, 1] + h * W[q, 1] + u 
+    # how we compute W[:, 2] ?
+  
+    for n = 2:NT
+
+        W[1, n+1] = W[2, n] - W[1, n-1]
+
+        for j = 2:N-1
+            W[j, n+1] = W[j+1, n] + W[j-1, n] - W[j, n-1]
+        end
+
+        W[N, n+1] =  g[n] + W[N-1, n] - W[N, n-1]
+        
+    end
+    cW = W[:, NT+1]
+
+    # derivate temporale
+    W[q, 2] = (W[p, 3] - W[p, 1]) / (2 * dt)
+
+    for n = 3:NT-2
+        W[q, n] = (W[p, n+1] - W[p, n-1]) / (2 * dt)
+    end
+
+    W[q, NT] = (W[p, NT] - W[p, NT-1]) / dt 
+
+    return W, cW
+end
+ 
 end # module
