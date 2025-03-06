@@ -250,17 +250,18 @@ function  wave1dexact(w0, w1, T, g)
         W[N, n+1] =  g[n] + W[N-1, n] - W[N, n-1]
         
     end
-    cW = W[:, NT+1]
-
+   
+    
     # derivate temporale
     W[q, 2] = (W[p, 3] - W[p, 1]) / (2 * dt)
 
-    for n = 3:NT-2
+    for n = 3:NT-1
         W[q, n] = (W[p, n+1] - W[p, n-1]) / (2 * dt)
     end
 
-    W[q, NT] = (W[p, NT] - W[p, NT-1]) / dt 
-
+    W[q, NT+1] = (W[p, NT+1] - W[p, NT]) / dt 
+    cW = W[:, NT+1]
+    
     return W, cW
 end
 
@@ -287,8 +288,8 @@ function  wave1dexactOPT(w0, w1, T, g, outputNodes = [])
 
     # initialization with initial cond
 
-    global W1 = w0
-    W0 = w1
+    global W1 = copy(w0)
+    W0 = copy(w1)
 
     W[:, 1] = W1[outputNodes]
     u = -w0
@@ -300,10 +301,11 @@ function  wave1dexactOPT(w0, w1, T, g, outputNodes = [])
     
     
 
-    global W2 = W1 + h * W0 + u
+    global W2 = W1 + h * w1 + u
     W[:, 2] = W2[outputNodes]
     # how we compute W[:, 2] ?
     global WN = copy(W2)
+    global cW = zeros(2*N)
     for n = 2:NT
         
         WN[1] = W2[2] - W1[1]
@@ -315,13 +317,12 @@ function  wave1dexactOPT(w0, w1, T, g, outputNodes = [])
         WN[N] =  g[n] + W2[N-1] - W1[N]
 
         W[:, n+1] = WN[outputNodes]
+        cW[p] = copy(WN)
+        cW[q] = (WN - W2)/dt
         W1 = copy(W2)
         W2 = copy(WN)
     end
-    cW = zeros(2*N)
-    cW[p] = W2
-    cW[q] = (W2 - W1) / dt 
-
+    
     return W, cW
 end
 
