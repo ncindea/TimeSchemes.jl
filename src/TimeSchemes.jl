@@ -263,5 +263,67 @@ function  wave1dexact(w0, w1, T, g)
 
     return W, cW
 end
+
+
+function  wave1dexactOPT(w0, w1, T, g, outputNodes = [])
+
+    N = length(w0) 
+
+    h = 1 / (N + 1)
+    dt = h
+    NT = Int(T / dt)
+
+    if length(outputNodes) != 0
+        global W = zeros(length(outputNodes), NT+1)
+    else
+        global W = zeros(2 * N, NT+1) # solution to return
+        outputNodes = 1:(2*N)
+    end
+    
+    cW = zeros(2 * N, 1) 
+
+    p = 1:N               # first N components of the solution w
+    q = (N + 1):(2 * N)   # last  N components of the solution w'
+
+    # initialization with initial cond
+
+    global W1 = w0
+    W0 = w1
+
+    W[:, 1] = W1[outputNodes]
+    u = -w0
+    u[1] = u[1] + w0[2] / 2
+    for i = 2:N-1
+        u[i] = u[i] + (w0[i-1] + w0[i+1])/2
+    end
+    u[N] = u[N] +(w0[N-1] + g[1])/2
+    
+    
+
+    global W2 = W1 + h * W0 + u
+    W[:, 2] = W2[outputNodes]
+    # how we compute W[:, 2] ?
+    global WN = copy(W2)
+    for n = 2:NT
+        
+        WN[1] = W2[2] - W1[1]
+
+        for j = 2:N-1
+            WN[j] = W2[j+1] + W2[j-1] - W1[j]
+        end
+
+        WN[N] =  g[n] + W2[N-1] - W1[N]
+
+        W[:, n+1] = WN[outputNodes]
+        W1 = copy(W2)
+        W2 = copy(WN)
+    end
+    cW = zeros(2*N)
+    cW[p] = W2
+    cW[q] = (W2 - W1) / dt 
+
+    return W, cW
+end
+
  
 end # module
