@@ -295,25 +295,20 @@ function  wave1dexactOPT(w0, w1, T, g, outputNodes = [])
     W[:, 1] = W1[outputNodes]
     u = -w0
     u[1] = u[1] + w0[2] / 2
-    for i = 2:N-1
-        u[i] = u[i] + (w0[i-1] + w0[i+1])/2
-    end
+    j = 2:N-1       
+    u[j] = u[j] + (w0[j .- 1] + w0[j .+ 1])/2
     u[N] = u[N] +(w0[N-1] + g[1])/2
     
-    
-
     W2 = W1 + h * w1 + u
     W[:, 2] = W2[outputNodes]
     # how we compute W[:, 2] ?
     WN = copy(W2)
     cW = zeros(2*N)
     for n = 2:NT
+        
         WN[1] = W2[2] - W1[1]
 
-        for j = 2:N-1
-            WN[j] = W2[j+1] + W2[j-1] - W1[j]
-        end
-
+        WN[j] = W2[j .+ 1] + W2[j .- 1] - W1[j]
         WN[N] =  g[n] + W2[N-1] - W1[N]
 
         W[:, n+1] = WN[outputNodes]
@@ -323,9 +318,9 @@ function  wave1dexactOPT(w0, w1, T, g, outputNodes = [])
     cW[p] = copy(WN)
     cW[q[1]] = (-W1[p[1]] + W2[p[2]] / 2) / dt
     cW[q[N]] = (-W1[p[N]] + (W2[p[N - 1]] + g[NT+1]) / 2) / dt
-    for j = 2:N-1
-        cW[q[j]] = (-W1[p[j]] + (W2[p[j - 1]] + W2[p[j + 1]]) / 2) / dt
-    end
+    
+    cW[q[j]] = (-W1[p[j]] + (W2[p[j .- 1]] + W2[p[j .+ 1]]) / 2) / dt
+    
     return W, cW
 end
 
