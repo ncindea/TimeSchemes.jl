@@ -295,13 +295,12 @@ function  wave1dexactOPT(w0, w1, T, g, outputNodes = [])
     W[:, 1] = W1[outputNodes]
     u = -w0
     u[1] = u[1] + w0[2] / 2
-    j = 2:N-1
-    J = collect(Iterators.partition(j, div(length(j), Threads.nthreads())+1))
     
-    Threads.@threads for i =1:length(J)
-        u[J[i]] = u[J[i]] + (w0[J[i] .- 1] + w0[J[i] .+ 1])/2
+    Threads.@threads for j =2:N-1
+        u[j] = u[j] + (w0[j - 1] + w0[j + 1])/2
     end
     u[N] = u[N] +(w0[N-1] + g[1])/2
+
     
     W2 = W1 + h * w1 + u
     W[:, 2] = W2[outputNodes]
@@ -313,22 +312,25 @@ function  wave1dexactOPT(w0, w1, T, g, outputNodes = [])
         WN[1] = W2[2] - W1[1]
 
 
-        Threads.@threads  for i=1:length(J)
-            WN[J[i]] = W2[J[i] .+ 1] + W2[J[i] .- 1] - W1[J[i]]
+        Threads.@threads  for j=2:N-1
+            WN[j] = W2[j + 1] + W2[j - 1] - W1[j]
         end
         
         WN[N] =  g[n] + W2[N-1] - W1[N]
 
         W[:, n+1] = WN[outputNodes]
-        W1 = copy(W2)
-        W2 = copy(WN)
+        Threads.@threads for j = 1:N
+            W1[j] = W2[j]
+            W2[j] = WN[j]
+        end
+        
     end
     cW[p] = copy(WN)
     cW[q[1]] = (-W1[p[1]] + W2[p[2]] / 2) / dt
     cW[q[N]] = (-W1[p[N]] + (W2[p[N - 1]] + g[NT+1]) / 2) / dt
     
-    Threads.@threads for i =1:Threads.length(J)
-        cW[q[J[i]]] = (-W1[p[J[i]]] + (W2[p[J[i] .- 1]] + W2[p[J[i] .+ 1]]) / 2) / dt
+    Threads.@threads for j = 2:N-1
+        cW[q[j]] = (-W1[p[j]] + (W2[p[j - 1]] + W2[p[j + 1]]) / 2) / dt
     end
     
     return W, cW
